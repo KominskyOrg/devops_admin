@@ -1,17 +1,15 @@
-version: '3.8'
-
 services:
   auth_api:
     build:
       context: ./../auth_api
-      dockerfile: Dockerfile.dev
+      dockerfile: Dockerfile.local
     ports:
       - "5000:5000"
     volumes:
       - ./../auth_api:/app
     environment:
       - FLASK_APP=app
-      - FLASK_ENV=development
+      - FLASK_ENV=local
       - FLASK_DEBUG=1
     networks:
       - shared_network
@@ -19,26 +17,49 @@ services:
   auth_service:
     build:
       context: ./../auth_service
-      dockerfile: Dockerfile.dev
+      dockerfile: Dockerfile.local
     ports:
       - "5001:5001"
     volumes:
       - ./../auth_service:/app
     environment:
       - FLASK_APP=app
-      - FLASK_ENV=development
+      - FLASK_ENV=local
       - FLASK_DEBUG=1
+      - DATABASE_URL=mysql://auth_user:auth_password@db:3306/auth_database
     networks:
       - shared_network
+    depends_on:
+      db:
+        condition: service_healthy
 
   auth_app:
     build:
       context: ./../auth_app
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.dev
     ports:
       - "3000:3000"
     networks:
       - shared_network
+
+  db:
+    image: mysql:9.0
+    environment:
+      MYSQL_ROOT_PASSWORD: hank
+    ports:
+      - "3306:3306"
+    networks:
+      - shared_network
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
+      - ./my.cnf:/etc/mysql/my.cnf
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h db -u root -p$MYSQL_ROOT_PASSWORD"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
 
   nginx:
     image: nginx:latest
@@ -53,3 +74,6 @@ services:
 networks:
   shared_network:
     driver: bridge
+
+volumes:
+  db_data:
