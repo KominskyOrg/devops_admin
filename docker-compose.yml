@@ -2,7 +2,7 @@ services:
   auth_api:
     build:
       context: ./../auth_api
-      dockerfile: Dockerfile.local
+      dockerfile: Dockerfile.dev
     ports:
       - "5000:5000"
     volumes:
@@ -17,7 +17,7 @@ services:
   auth_service:
     build:
       context: ./../auth_service
-      dockerfile: Dockerfile.local
+      dockerfile: Dockerfile.dev
     ports:
       - "5001:5001"
     volumes:
